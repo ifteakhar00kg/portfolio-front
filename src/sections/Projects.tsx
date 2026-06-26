@@ -12,7 +12,7 @@ type ApiProject = {
   title: string;
   description?: string;
   techStack?: string;
-  category?: string; 
+  category?: string;
   githubUrl?: string;
   liveUrl?: string;
   year?: string;
@@ -31,11 +31,15 @@ function mapApiProjects(apiList: ApiProject[]): ExtendedProject[] {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    
+
     let finalCategory: Project["category"] = "Full Stack";
     if (p.category === "FRONTEND") {
       finalCategory = "FRONTEND";
-    } else if (p.category === "BACKEND" || p.category === "AI Projects" || p.category === "API Integration") {
+    } else if (
+      p.category === "BACKEND" ||
+      p.category === "AI Projects" ||
+      p.category === "API Integration"
+    ) {
       finalCategory = "BACKEND";
     } else if (p.category === "Full Stack") {
       finalCategory = "Full Stack";
@@ -44,23 +48,220 @@ function mapApiProjects(apiList: ApiProject[]): ExtendedProject[] {
     return {
       num: String(idx + 1).padStart(2, "0"),
       name: p.title,
-      description: p.description, 
+      description: p.description,
       tech,
       year: p.year || "2026",
       category: finalCategory,
-      image: p.imageUrl && p.imageUrl.trim() !== "" ? p.imageUrl : `https://picsum.photos/seed/ift-${p.id}/600/440`,
+      image:
+        p.imageUrl && p.imageUrl.trim() !== ""
+          ? p.imageUrl
+          : `https://picsum.photos/seed/ift-${p.id}/600/440`,
       liveUrl: p.liveUrl || "#",
       githubUrl: p.githubUrl || "",
     };
   });
 }
 
-// === NEW FLIPPABLE CARD COMPONENT ===
-function FlippableProjectCard({ p, setHovered }: { p: ExtendedProject; setHovered: (p: ExtendedProject | null) => void }) {
+// ─── Slim scrollbar styles (shared) ──────────────────────────────────────────
+function PjBackScrollStyles() {
+  return (
+    <style>{`
+      .pj-back-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(232,227,213,0.25) transparent;
+      }
+      .pj-back-scroll::-webkit-scrollbar { width: 4px; }
+      .pj-back-scroll::-webkit-scrollbar-track { background: transparent; }
+      .pj-back-scroll::-webkit-scrollbar-thumb {
+        background: rgba(232,227,213,0.22);
+        border-radius: 4px;
+      }
+      .pj-back-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgba(232,227,213,0.4);
+      }
+    `}</style>
+  );
+}
+
+// ─── Shared Back-Face content (used by both desktop card & mobile card) ───────
+function CardBackFace({
+  p,
+  onFlipBack,
+  borderRadius = "16px",
+}: {
+  p: ExtendedProject;
+  onFlipBack: (e: React.MouseEvent) => void;
+  borderRadius?: string;
+}) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        transform: "rotateY(180deg)",
+        backgroundColor: "#0E0E0E",
+        backgroundImage:
+          "radial-gradient(circle at top right, rgba(232,227,213,0.06), transparent 55%)",
+        border: "1px solid rgba(232,227,213,0.1)",
+        borderRadius,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        boxShadow: "inset 0 0 40px rgba(0,0,0,0.5)",
+      }}
+    >
+      {/* Top meta */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          padding: "24px 28px 0 28px",
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "DM Mono",
+            fontSize: "11px",
+            color: "rgba(232,227,213,0.4)",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+          }}
+        >
+          {p.num}. — {p.category}
+        </span>
+        <span
+          style={{
+            fontFamily: "DM Mono",
+            fontSize: "11px",
+            color: "rgba(232,227,213,0.35)",
+          }}
+        >
+          {p.year}
+        </span>
+      </div>
+
+      {/* Title */}
+      <div style={{ padding: "16px 28px 0 28px", flexShrink: 0 }}>
+        <h3
+          style={{
+            fontFamily: "DM Serif Display",
+            fontSize: "26px",
+            color: "#E8E3D5",
+            lineHeight: 1.2,
+          }}
+        >
+          {p.name}
+        </h3>
+      </div>
+
+      {/* Divider */}
+      <div
+        style={{
+          height: "1px",
+          background: "rgba(232,227,213,0.08)",
+          margin: "14px 28px",
+          flexShrink: 0,
+        }}
+      />
+
+      {/* Scrollable description */}
+      <div
+        className="pj-back-scroll"
+        onClick={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "0 28px",
+          minHeight: 0,
+          overscrollBehavior: "contain",
+          cursor: "auto",
+          paddingRight: "20px",
+        }}
+      >
+        <p
+          style={{
+            fontFamily: "DM Sans",
+            fontSize: "13.5px",
+            color: "rgba(232,227,213,0.65)",
+            lineHeight: 1.85,
+            whiteSpace: "pre-line",
+          }}
+        >
+          {p.description || "No description available for this project."}
+        </p>
+      </div>
+
+      {/* Fade mask */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: "1px",
+          right: "1px",
+          bottom: "40px",
+          height: "34px",
+          background: "linear-gradient(to top, #0E0E0E, transparent)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Bottom hint */}
+      <div
+        style={{
+          padding: "10px 28px 20px 28px",
+          flexShrink: 0,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderTop: "1px solid rgba(232,227,213,0.06)",
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "DM Mono",
+            fontSize: "9px",
+            color: "rgba(232,227,213,0.18)",
+            textTransform: "uppercase",
+            letterSpacing: "0.15em",
+          }}
+        >
+          scroll to read
+        </span>
+        <span
+          onClick={onFlipBack}
+          style={{
+            fontFamily: "DM Mono",
+            fontSize: "9px",
+            color: "rgba(232,227,213,0.25)",
+            textTransform: "uppercase",
+            letterSpacing: "0.15em",
+            cursor: "pointer",
+          }}
+        >
+          ← flip back
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Desktop Flip Card ────────────────────────────────────────────────────────
+function FlippableProjectCard({
+  p,
+  setHovered,
+}: {
+  p: ExtendedProject;
+  setHovered: (p: ExtendedProject | null) => void;
+}) {
   const [isFlipped, setIsFlipped] = useState(false);
   const flipBackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // component unmount হলে pending timer clear করার জন্য
   useEffect(() => {
     return () => {
       if (flipBackTimer.current) clearTimeout(flipBackTimer.current);
@@ -71,7 +272,6 @@ function FlippableProjectCard({ p, setHovered }: { p: ExtendedProject; setHovere
     <div
       data-pj-card
       onMouseEnter={() => {
-        // mouse আবার card-এ আনলে pending auto-flip-back timer cancel
         if (flipBackTimer.current) {
           clearTimeout(flipBackTimer.current);
           flipBackTimer.current = null;
@@ -80,7 +280,6 @@ function FlippableProjectCard({ p, setHovered }: { p: ExtendedProject; setHovere
       }}
       onMouseLeave={() => {
         setHovered(null);
-        // mouse সরিয়ে ফেললে ২ সেকেন্ড পর auto flip back to front
         if (flipBackTimer.current) clearTimeout(flipBackTimer.current);
         flipBackTimer.current = setTimeout(() => {
           setIsFlipped(false);
@@ -88,8 +287,7 @@ function FlippableProjectCard({ p, setHovered }: { p: ExtendedProject; setHovere
         }, 1000);
       }}
       className="group relative w-[380px] shrink-0 cursor-pointer"
-      // পার্সপেক্টিভ 1000 থেকে 1200 করা হয়েছে আরও রিয়ালিস্টিক 3D ফিল পাওয়ার জন্য
-      style={{ height: "60vh", minHeight: "440px", perspective: "1200px" }} 
+      style={{ height: "60vh", minHeight: "440px", perspective: "1200px" }}
     >
       <div
         onClick={() => {
@@ -99,7 +297,6 @@ function FlippableProjectCard({ p, setHovered }: { p: ExtendedProject; setHovere
           }
           const next = !isFlipped;
           setIsFlipped(next);
-          // back face দেখানোর সময় cursor-preview image বন্ধ, front face-এ ফিরলে আবার দেখাবে
           setHovered(next ? null : p);
         }}
         style={{
@@ -107,12 +304,11 @@ function FlippableProjectCard({ p, setHovered }: { p: ExtendedProject; setHovere
           width: "100%",
           height: "100%",
           transformStyle: "preserve-3d",
-          // অনেক স্মুথ এবং প্রফেশনাল ফ্লিপ ট্রানজিশন অ্যাড করা হয়েছে (0.85s cubic-bezier)
           transition: "transform 0.85s cubic-bezier(0.64, 0, 0.28, 1)",
           transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
         }}
       >
-        {/* === FRONT FACE === */}
+        {/* FRONT */}
         <div
           style={{
             position: "absolute",
@@ -163,7 +359,9 @@ function FlippableProjectCard({ p, setHovered }: { p: ExtendedProject; setHovere
               {p.tech.map((t, idx) => (
                 <span key={t}>
                   {t}
-                  {idx < p.tech.length - 1 && <span className="mx-2 opacity-50"> </span>}
+                  {idx < p.tech.length - 1 && (
+                    <span className="mx-2 opacity-50"> </span>
+                  )}
                 </span>
               ))}
             </div>
@@ -200,118 +398,187 @@ function FlippableProjectCard({ p, setHovered }: { p: ExtendedProject; setHovere
           </div>
         </div>
 
-        {/* === BACK FACE === */}
+        {/* BACK — shared component */}
+        <CardBackFace
+          p={p}
+          borderRadius="16px"
+          onFlipBack={(e) => {
+            e.stopPropagation();
+            setIsFlipped(false);
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Mobile Flip Card ─────────────────────────────────────────────────────────
+function MobileFlipCard({ p }: { p: ExtendedProject }) {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  const initials = p.name
+    .replace(/[^A-Za-z]/g, "")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        aspectRatio: "16 / 9",
+        maxHeight: "260px",
+        perspective: "1200px",
+        margin: "12px 0",
+        cursor: "pointer",
+      }}
+      onClick={() => setIsFlipped((f) => !f)}
+    >
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          transformStyle: "preserve-3d",
+          transition: "transform 0.75s cubic-bezier(0.64, 0, 0.28, 1)",
+          transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+        }}
+      >
+        {/* MOBILE FRONT — image card exactly as before */}
         <div
-          className="flex flex-col items-center text-center overflow-hidden rounded-2xl border border-[var(--divider)] bg-[var(--surface)] transition-colors duration-500 hover:bg-[var(--surface-hover)]"
           style={{
             position: "absolute",
             inset: 0,
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
-            transform: "rotateY(180deg)",
-            // থিমের ওপর বেস করে একটি চমৎকার হালকা রেডিয়াল গ্লো ইফেক্ট অ্যাড করা হয়েছে
-            backgroundImage: "radial-gradient(circle at top right, rgba(232, 227, 213, 0.06), transparent 55%)",
-            padding: "32px",
-            boxShadow: "inset 0 0 40px rgba(0,0,0,0.5)" // ডেপথ দেওয়ার জন্য ইনার শ্যাডো
+            borderRadius: "14px",
+            overflow: "hidden",
           }}
         >
-          {/* Top Meta info */}
-          <div style={{ position: "absolute", top: "24px", left: "24px", right: "24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", zIndex: 2 }}>
-            <span style={{ fontFamily: "DM Mono", fontSize: "11px", color: "rgba(232,227,213,0.4)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {p.num}. — {p.category}
-            </span>
-            <span style={{ fontFamily: "DM Mono", fontSize: "11px", color: "rgba(232,227,213,0.35)" }}>
-              {p.year}
-            </span>
-          </div>
-
-          {/* Title + Scrollable Description — full text reachable via slim custom scrollbar */}
-          <div
-            onClick={(e) => e.stopPropagation()}
-            onWheel={(e) => e.stopPropagation()}
-            onTouchMove={(e) => e.stopPropagation()}
-            className="pj-back-scroll"
-            style={{
-              width: "100%",
-              marginTop: "58px",
-              marginBottom: "30px",
-              overflowY: "auto",
-              flex: 1,
-              minHeight: 0,
-              overscrollBehavior: "contain",
-              cursor: "auto",
-              paddingRight: "6px",
-            }}
-          >
-            <h3
-              className="transition-colors duration-500 group-hover:text-white"
-              style={{ fontFamily: "DM Serif Display", fontSize: "27px", color: "#E8E3D5", lineHeight: 1.2, marginBottom: "14px" }}
+          {p.image ? (
+            <img
+              src={p.image}
+              alt={p.name}
+              loading="lazy"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(135deg, #0E0E0E 0%, #161616 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
-              {p.name}
-            </h3>
-            <p
-              className="transition-colors duration-500 text-[rgba(232,227,213,0.55)] group-hover:text-[rgba(232,227,213,0.9)]"
-              style={{ fontFamily: "DM Sans", fontSize: "13.5px", lineHeight: 1.8, textAlign: "left" }}
-            >
-              {p.description || "No description available for this project."}
-            </p>
-          </div>
-
-          {/* Fade mask hinting there's more to scroll */}
+              <span
+                className="font-display"
+                style={{ fontSize: "64px", color: "rgba(232,227,213,0.08)" }}
+              >
+                {initials}
+              </span>
+            </div>
+          )}
           <div
             aria-hidden
             style={{
               position: "absolute",
-              left: "1px",
-              right: "1px",
-              bottom: "40px",
-              height: "34px",
-              background: "linear-gradient(to top, var(--surface), rgba(0,0,0,0))",
-              pointerEvents: "none",
+              inset: 0,
+              background:
+                "linear-gradient(to bottom, rgba(8,8,8,0.2) 0%, rgba(8,8,8,0.4) 40%, rgba(8,8,8,0.85) 100%)",
             }}
           />
-
-          {/* Bottom Flip Hint */}
-          <span style={{ 
-            fontFamily: "DM Mono", fontSize: "9px", color: "rgba(232,227,213,0.2)", 
-            position: "absolute", bottom: "24px", textTransform: "uppercase", letterSpacing: "0.15em",
-            zIndex: 2,
-          }}>
-            scroll to read · click to flip back
-          </span>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              padding: "16px",
+            }}
+          >
+            <div className="flex items-start justify-between">
+              <span
+                className="font-mono"
+                style={{ fontSize: "11px", color: "rgba(232,227,213,0.5)" }}
+              >
+                {p.num}.
+              </span>
+              <span
+                className="font-mono"
+                style={{ fontSize: "11px", color: "rgba(232,227,213,0.4)" }}
+              >
+                {p.year}
+              </span>
+            </div>
+            <div>
+              {p.tech?.length > 0 && (
+                <div
+                  className="font-mono"
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "4px 8px",
+                    fontSize: "9px",
+                    color: "rgba(232,227,213,0.55)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.12em",
+                    marginBottom: "6px",
+                  }}
+                >
+                  {p.tech.slice(0, 4).map((t) => (
+                    <span key={t}>{t}</span>
+                  ))}
+                </div>
+              )}
+              <h3
+                className="font-display"
+                style={{ fontSize: "20px", color: "#E8E3D5", lineHeight: 1.2 }}
+              >
+                {p.name}
+              </h3>
+              {/* Flip hint */}
+              <span
+                style={{
+                  fontFamily: "DM Mono",
+                  fontSize: "9px",
+                  color: "rgba(232,227,213,0.3)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  display: "block",
+                  marginTop: "6px",
+                }}
+              >
+                tap to flip →
+              </span>
+            </div>
+          </div>
         </div>
+
+        {/* MOBILE BACK — same shared component */}
+        <CardBackFace
+          p={p}
+          borderRadius="14px"
+          onFlipBack={(e) => {
+            e.stopPropagation();
+            setIsFlipped(false);
+          }}
+        />
       </div>
     </div>
   );
 }
-// === END FLIPPABLE CARD COMPONENT ===
 
-// Slim, premium-styled scrollbar for the back-face description.
-// Rendered once at module scope so it isn't duplicated per card.
-function PjBackScrollStyles() {
-  return (
-    <style>{`
-      .pj-back-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(232,227,213,0.25) transparent;
-      }
-      .pj-back-scroll::-webkit-scrollbar {
-        width: 4px;
-      }
-      .pj-back-scroll::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .pj-back-scroll::-webkit-scrollbar-thumb {
-        background: rgba(232,227,213,0.22);
-        border-radius: 4px;
-      }
-      .pj-back-scroll::-webkit-scrollbar-thumb:hover {
-        background: rgba(232,227,213,0.4);
-      }
-    `}</style>
-  );
-}
-
+// ─── Main Projects Component ──────────────────────────────────────────────────
 export function Projects() {
   const rootRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -319,7 +586,9 @@ export function Projects() {
   const previewRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState<Filter>("All");
   const [hovered, setHovered] = useState<ExtendedProject | null>(null);
-  const [projects, setProjects] = useState<ExtendedProject[]>(fallbackProjects as unknown as ExtendedProject[]);
+  const [projects, setProjects] = useState<ExtendedProject[]>(
+    fallbackProjects as unknown as ExtendedProject[],
+  );
   const [loading, setLoading] = useState(true);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
@@ -346,7 +615,8 @@ export function Projects() {
   }, []);
 
   const list = useMemo(
-    () => (filter === "All" ? projects : projects.filter((p) => p.category === filter)),
+    () =>
+      filter === "All" ? projects : projects.filter((p) => p.category === filter),
     [filter, projects],
   );
 
@@ -408,7 +678,8 @@ export function Projects() {
           const pin = pinRef.current;
           if (!track || !pin) return;
 
-          const distance = () => Math.max(0, track.scrollWidth - window.innerWidth + 96);
+          const distance = () =>
+            Math.max(0, track.scrollWidth - window.innerWidth + 96);
 
           gsap.to(track, {
             x: () => -distance(),
@@ -452,7 +723,10 @@ export function Projects() {
             duration: 0.7,
             stagger: 0.08,
             ease: "power3.out",
-            scrollTrigger: { trigger: "[data-pj-mobile-track]", start: "top 85%" },
+            scrollTrigger: {
+              trigger: "[data-pj-mobile-track]",
+              start: "top 85%",
+            },
           });
         });
       }, rootRef);
@@ -465,6 +739,8 @@ export function Projects() {
   return (
     <section ref={rootRef} className="relative">
       <PjBackScrollStyles />
+
+      {/* Cursor-follow preview (desktop) */}
       <div
         ref={previewRef}
         aria-hidden
@@ -482,6 +758,7 @@ export function Projects() {
         )}
       </div>
 
+      {/* ── Section header ── */}
       <div className="mx-auto max-w-[1280px] px-5 pt-20 sm:px-6 md:px-12 md:pt-[140px]">
         <div data-pj-head className="relative">
           <span
@@ -492,7 +769,10 @@ export function Projects() {
           >
             02
           </span>
-          <p data-fg-accent className="relative font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
+          <p
+            data-fg-accent
+            className="relative font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]"
+          >
             Selected Work
           </p>
           <div className="relative mt-6 flex flex-wrap items-end justify-between gap-6">
@@ -502,14 +782,24 @@ export function Projects() {
                 <span className="pj-stack-card c2" />
                 <span className="pj-stack-card c1" />
               </div>
-              <h2 className="font-display leading-[1.05]" style={{ fontSize: "clamp(36px, 6vw, 56px)" }}>
-                Projects that <span className="italic text-[var(--accent)]">shipped.</span>
+              <h2
+                className="font-display leading-[1.05]"
+                style={{ fontSize: "clamp(36px, 6vw, 56px)" }}
+              >
+                Projects that{" "}
+                <span className="italic text-[var(--accent)]">shipped.</span>
               </h2>
             </div>
-            <span data-fg-accent className="font-mono text-lg text-[var(--muted)] tabular-nums">(2025 — 2026)</span>
+            <span
+              data-fg-accent
+              className="font-mono text-lg text-[var(--muted)] tabular-nums"
+            >
+              (2025 — 2026)
+            </span>
           </div>
         </div>
 
+        {/* Filters */}
         <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-[var(--divider)] pb-4 md:mt-12 md:gap-8">
           {FILTERS.map((f) => {
             const active = filter === f;
@@ -518,7 +808,9 @@ export function Projects() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`relative font-mono text-[11px] uppercase tracking-[0.2em] transition-colors ${
-                  active ? "text-[var(--fg)]" : "text-[var(--muted)] hover:text-[var(--fg)]"
+                  active
+                    ? "text-[var(--fg)]"
+                    : "text-[var(--muted)] hover:text-[var(--fg)]"
                 }`}
               >
                 {f}
@@ -533,7 +825,10 @@ export function Projects() {
         </div>
       </div>
 
+      {/* ── Pinned scroll area ── */}
       <div ref={pinRef} className="relative lg:h-screen lg:overflow-hidden">
+
+        {/* TABLET row list (768–1023px) — unchanged */}
         <div className="mx-auto hidden max-w-[1280px] px-5 sm:px-6 md:block md:px-12 lg:hidden">
           <div ref={trackRef} className="mt-2">
             {list.map((p) => (
@@ -545,7 +840,9 @@ export function Projects() {
                 <span className="col-span-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
                   {p.num}.
                 </span>
-                <h3 className="col-span-6 font-display text-[24px] leading-tight">{p.name}</h3>
+                <h3 className="col-span-6 font-display text-[24px] leading-tight">
+                  {p.name}
+                </h3>
                 <div className="col-span-4 flex items-center justify-end gap-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
                   <span>{p.year}</span>
                   <a
@@ -572,21 +869,22 @@ export function Projects() {
           </div>
         </div>
 
-        <div data-pj-mobile-track className="mx-auto max-w-[1280px] px-5 sm:px-6 md:hidden">
+        {/* MOBILE accordion rows — now with MobileFlipCard inside (<768px) */}
+        <div
+          data-pj-mobile-track
+          className="mx-auto max-w-[1280px] px-5 sm:px-6 md:hidden"
+        >
           <div className="mt-2">
             {list.map((p) => {
               const key = p.num + p.name;
               const isOpen = expandedKey === key;
-              const initials = p.name
-                .replace(/[^A-Za-z]/g, "")
-                .slice(0, 2)
-                .toUpperCase();
               return (
                 <div
                   key={key}
                   data-pj-mobile-row
                   style={{ borderBottom: "1px solid rgba(232,227,213,0.08)" }}
                 >
+                  {/* Row tap to expand */}
                   <button
                     type="button"
                     onClick={() => setExpandedKey(isOpen ? null : key)}
@@ -606,6 +904,8 @@ export function Projects() {
                       {p.name}
                     </span>
                   </button>
+
+                  {/* Expanded: MobileFlipCard replaces old static card */}
                   <AnimatePresence initial={false}>
                     {isOpen && (
                       <motion.div
@@ -616,148 +916,30 @@ export function Projects() {
                         transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
                         style={{ overflow: "hidden" }}
                       >
-                        <div
-                          style={{
-                            position: "relative",
-                            width: "100%",
-                            aspectRatio: "16 / 9",
-                            maxHeight: "240px",
-                            borderRadius: "14px",
-                            overflow: "hidden",
-                            margin: "12px 0",
-                          }}
-                        >
-                          {p.image ? (
-                            <img
-                              src={p.image}
-                              alt={p.name}
-                              loading="lazy"
-                              style={{
-                                position: "absolute",
-                                inset: 0,
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                                display: "block",
-                              }}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                position: "absolute",
-                                inset: 0,
-                                background: "linear-gradient(135deg, #0E0E0E 0%, #161616 100%)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                            >
-                              <span
-                                className="font-display"
-                                style={{ fontSize: "64px", color: "rgba(232,227,213,0.08)" }}
-                              >
-                                {initials}
-                              </span>
-                            </div>
-                          )}
-                          <div
-                            aria-hidden
-                            style={{
-                              position: "absolute",
-                              inset: 0,
-                              background:
-                                "linear-gradient(to bottom, rgba(8,8,8,0.2) 0%, rgba(8,8,8,0.4) 40%, rgba(8,8,8,0.85) 100%)",
-                            }}
-                          />
-                          <div
-                            style={{
-                              position: "absolute",
-                              inset: 0,
-                              display: "flex",
-                              flexDirection: "column",
-                              justifyContent: "space-between",
-                              padding: "20px",
-                            }}
+                        <MobileFlipCard p={p} />
+
+                        {/* Live / GitHub links below the flip card */}
+                        <div className="flex items-center gap-3 pb-4">
+                          <a
+                            href={p.liveUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono inline-flex items-center gap-[6px] uppercase text-[11px] tracking-[0.08em] text-[#E8E3D5] border border-[rgba(232,227,213,0.25)] rounded-md px-3.5 py-2 bg-[rgba(8,8,8,0.4)] backdrop-blur-[4px] transition-all hover:bg-[rgba(232,227,213,0.1)]"
                           >
-                            <div className="flex items-start justify-between">
-                              <span
-                                className="font-mono"
-                                style={{
-                                  fontSize: "11px",
-                                  color: "rgba(232,227,213,0.5)",
-                                }}
-                              >
-                                {p.num}.
-                              </span>
-                              <span
-                                className="font-mono"
-                                style={{
-                                  fontSize: "11px",
-                                  color: "rgba(232,227,213,0.4)",
-                                }}
-                              >
-                                {p.year}
-                              </span>
-                            </div>
-                            <div>
-                              {p.tech?.length > 0 && (
-                                <div
-                                  className="font-mono"
-                                  style={{
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    gap: "6px 10px",
-                                    fontSize: "10px",
-                                    color: "rgba(232,227,213,0.55)",
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.12em",
-                                  }}
-                                >
-                                  {p.tech.map((t, idx) => (
-                                    <span key={t}>
-                                      {t}
-                                      {idx < p.tech.length - 1 && (
-                                        <span style={{ marginLeft: "10px", opacity: 0.5 }}> </span>
-                                      )}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                              <h3
-                                className="font-display"
-                                style={{
-                                  marginTop: "12px",
-                                  fontSize: "24px",
-                                  color: "#E8E3D5",
-                                  lineHeight: 1.2,
-                                }}
-                              >
-                                {p.name}
-                              </h3>
-                              <div className="mt-4 flex items-center gap-3">
-                                <a
-                                  href={p.liveUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="font-mono inline-flex items-center gap-[6px] uppercase text-[11px] tracking-[0.08em] text-[#E8E3D5] border border-[rgba(232,227,213,0.25)] rounded-md px-3.5 py-2 bg-[rgba(8,8,8,0.4)] backdrop-blur-[4px] transition-all hover:bg-[rgba(232,227,213,0.1)]"
-                                >
-                                  VIEW PROJECT
-                                  <ArrowUpRight size={14} strokeWidth={1.5} />
-                                </a>
-                                {p.githubUrl && (
-                                  <a
-                                    href={p.githubUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-mono inline-flex items-center gap-[6px] uppercase text-[11px] tracking-[0.08em] text-[var(--muted)] border border-transparent rounded-md px-3.5 py-2 hover:text-[var(--fg)] transition-all"
-                                  >
-                                    <Github size={14} />
-                                    CODE
-                                  </a>
-                                )}
-                              </div>
-                            </div>
-                          </div>
+                            VIEW PROJECT
+                            <ArrowUpRight size={14} strokeWidth={1.5} />
+                          </a>
+                          {p.githubUrl && (
+                            <a
+                              href={p.githubUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono inline-flex items-center gap-[6px] uppercase text-[11px] tracking-[0.08em] text-[var(--muted)] border border-transparent rounded-md px-3.5 py-2 hover:text-[var(--fg)] transition-all"
+                            >
+                              <Github size={14} />
+                              CODE
+                            </a>
+                          )}
                         </div>
                       </motion.div>
                     )}
@@ -768,6 +950,7 @@ export function Projects() {
           </div>
         </div>
 
+        {/* DESKTOP horizontal scroll + flip cards (1024px+) */}
         <div className="hidden lg:flex h-full items-center">
           <div
             ref={trackRef}
@@ -775,12 +958,17 @@ export function Projects() {
             style={{ willChange: "transform" }}
           >
             {list.map((p) => (
-              <FlippableProjectCard key={p.num + p.name} p={p} setHovered={setHovered} />
+              <FlippableProjectCard
+                key={p.num + p.name}
+                p={p}
+                setHovered={setHovered}
+              />
             ))}
           </div>
         </div>
       </div>
 
+      {/* ── Footer row ── */}
       <div className="mx-auto max-w-[1280px] px-5 pb-20 sm:px-6 md:px-12 md:pb-[140px]">
         <div className="mt-10 flex flex-wrap items-center justify-between gap-4">
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)] tabular-nums">
@@ -794,7 +982,9 @@ export function Projects() {
           >
             <Github size={14} strokeWidth={1.5} />
             View all on GitHub
-            <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
+            <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
+              →
+            </span>
           </a>
         </div>
       </div>
