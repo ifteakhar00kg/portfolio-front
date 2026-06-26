@@ -506,7 +506,7 @@ export function Projects() {
                 Projects that <span className="italic text-[var(--accent)]">shipped.</span>
               </h2>
             </div>
-            <span data-fg-accent className="font-mono text-lg text-[var(--muted)] tabular-nums">(2022 — 2026)</span>
+            <span data-fg-accent className="font-mono text-lg text-[var(--muted)] tabular-nums">(2025 — 2026)</span>
           </div>
         </div>
 
