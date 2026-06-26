@@ -118,7 +118,7 @@ function CardBackFace({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          padding: "24px 28px 0 28px",
+          padding: "20px 24px 0 24px",
           flexShrink: 0,
         }}
       >
@@ -145,11 +145,11 @@ function CardBackFace({
       </div>
 
       {/* Title */}
-      <div style={{ padding: "16px 28px 0 28px", flexShrink: 0 }}>
+      <div style={{ padding: "12px 24px 0 24px", flexShrink: 0 }}>
         <h3
           style={{
             fontFamily: "DM Serif Display",
-            fontSize: "26px",
+            fontSize: "22px",
             color: "#E8E3D5",
             lineHeight: 1.2,
           }}
@@ -163,7 +163,7 @@ function CardBackFace({
         style={{
           height: "1px",
           background: "rgba(232,227,213,0.08)",
-          margin: "14px 28px",
+          margin: "10px 24px",
           flexShrink: 0,
         }}
       />
@@ -177,11 +177,11 @@ function CardBackFace({
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: "0 28px",
+          padding: "0 24px",
           minHeight: 0,
           overscrollBehavior: "contain",
           cursor: "auto",
-          paddingRight: "20px",
+          paddingRight: "16px",
         }}
       >
         <p
@@ -214,7 +214,7 @@ function CardBackFace({
       {/* Bottom hint */}
       <div
         style={{
-          padding: "10px 28px 20px 28px",
+          padding: "8px 24px 16px 24px",
           flexShrink: 0,
           display: "flex",
           justifyContent: "space-between",
@@ -425,8 +425,7 @@ function MobileFlipCard({ p }: { p: ExtendedProject }) {
     <div
       style={{
         width: "100%",
-        aspectRatio: "16 / 9",
-        maxHeight: "260px",
+        height: "420px",
         perspective: "1200px",
         margin: "12px 0",
         cursor: "pointer",
