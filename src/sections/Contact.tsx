@@ -210,7 +210,7 @@ export function Contact() {
               GitHub ↗
             </a>
             <a
-              href="https://linkedin.com/in/khandokarifteakar/"
+              href="https://www.linkedin.com/in/khandokar-ifteakar-ahmed/"
               target="_blank"
               rel="noopener noreferrer"
               className="font-mono text-xs uppercase tracking-[0.18em] text-[var(--muted)] transition-colors hover:text-[var(--fg)]"
